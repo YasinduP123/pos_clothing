@@ -129,6 +129,7 @@ Route::prefix('api')->group(function () {
 
 // Return sales routes
 Route::post('/return/sales/{id}', [PlaceOrderController::class, 'return']);
+Route::get('/return/sales', [ReturnItemsController::class, 'index']);
 
 // Reports
 Route::get('/reports/sales', [PlaceOrderController::class, 'salesReports']);

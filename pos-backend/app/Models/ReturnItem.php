@@ -10,6 +10,7 @@ class ReturnItem extends Model
 
     protected $fillable = [
         'order_item_id',
+        'variation_id',
         'reason',
         'quantity',
         'product_id',

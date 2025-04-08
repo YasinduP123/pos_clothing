@@ -8,6 +8,7 @@ use App\Models\Customer;
 use App\Models\Inventory;
 use App\Models\Product;
 use App\Models\Product_Sales;
+use App\Models\ProductVariations;
 use App\Models\Promotion;
 use App\Models\ReturnItem;
 use App\Models\Sales;
@@ -160,6 +161,7 @@ class PlaceOrderController extends Controller
         $request->validate([
             'items' => 'required|array|min:1',
             'items.*.order_item_id' => 'required|exists:order_items,id',
+            'items.*.variation_id' => 'required|exists:product_variations,id', // Validate variation_id
             'items.*.quantity' => 'required|integer|min:1',
             'items.*.reason' => 'required|string|max:255',
         ]);
@@ -189,6 +191,7 @@ class PlaceOrderController extends Controller
                 // Create return item record
                 $returnItem = ReturnItem::create([
                     'order_item_id' => $item['order_item_id'],
+                    'variation_id' => $item['variation_id'], // Include variation_id
                     'quantity' => $item['quantity'],
                     'reason' => $item['reason'],
                 ]);
@@ -196,24 +199,24 @@ class PlaceOrderController extends Controller
                 // Create sales return item record
                 SalesReturnItem::create([
                     'order_id' => $order->id,
-                    'return_item_id' => $returnItem->id, // Link to the return item
+                    'return_item_id' => $returnItem->id,
                     'returned_at' => $returnedAt,
                 ]);
 
-                // Update product quantity
-                $product = Product::where('bar_code', $orderItem->bar_code)->first();
-                if ($product) {
-                    $product->increment('quantity', $item['quantity']);
+                // Update quantity for the specific variation
+                $variation = ProductVariations::find($item['variation_id']);
+                if ($variation) {
+                    $variation->increment('quantity', $item['quantity']); // Use quantity instead of stock
 
-                    // Update product status
+                    // Update variation status
                     $status = 'In Stock';
-                    if ($product->quantity == 0) {
+                    if ($variation->quantity == 0) {
                         $status = 'Out Of Stock';
-                    } elseif ($product->quantity < 20) {
+                    } elseif ($variation->quantity < 20) {
                         $status = 'Low Stock';
                     }
-                    $product->status = $status;
-                    $product->save();
+                    $variation->status = $status;
+                    $variation->save();
                 }
             }
 

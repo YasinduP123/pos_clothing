@@ -14,4 +14,9 @@ class SalesReturnItem extends Model
         'created_at',
         'updated_at',
     ];
+
+    public function returnItem()
+    {
+        return $this->belongsTo(ReturnItem::class, 'return_item_id');
+    }
 }
